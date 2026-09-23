@@ -1,5 +1,7 @@
 /public/hot
-
+.idea
+/.idea
+/.claude
 /public/js/bundle
 /public/images/vendor
 /public/js/main.js
