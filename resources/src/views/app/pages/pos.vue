@@ -3499,46 +3499,7 @@ export default {
       if (this.pos_settings.barcode_scanning_sound) {
         this.audio.play();
       }
-      // 1) If product already exists in the list (ignore price_type), merge and just increase quantity
-      const hasProductIds = this.product.product_id !== undefined && this.product.product_id !== null;
-      const targetVariantId = (this.product.product_variant_id === undefined || this.product.product_variant_id === null)
-        ? null
-        : this.product.product_variant_id;
-      const existingIndex = this.details.findIndex(d => {
-        const dVariant = (d.product_variant_id === undefined || d.product_variant_id === null) ? null : d.product_variant_id;
-        const rowHasId = d.product_id !== undefined && d.product_id !== null;
-        // Prefer strict match by ids when both sides have ids
-        if (hasProductIds && rowHasId) {
-          return (d.product_id === this.product.product_id) && (dVariant === targetVariantId) && (d.sale_unit_id === this.product.sale_unit_id);
-        }
-        // Fallback to matching by code + unit when ids are not available
-        return (d.code === this.product.code) && (d.sale_unit_id === this.product.sale_unit_id);
-      });
-
-      if (existingIndex !== -1) {
-        const row = this.details[existingIndex];
-        const addQty = (typeof this.product.quantity === 'number' && this.product.quantity > 0) ? this.product.quantity : 1;
-        if (row.product_type !== 'is_service') {
-          const desiredQty = row.quantity + addQty;
-          if (desiredQty > row.current) {
-            this.makeToast("warning", this.$t("LowStock"), this.$t("Warning"));
-            row.quantity = row.current;
-          } else {
-            row.quantity = desiredQty;
-          }
-        } else {
-          row.quantity = row.quantity + addQty;
-        }
-        this.CalculTotal();
-        this.$forceUpdate();
-        setTimeout(() => { this.load_product = true; }, 300);
-        if (row.is_imei) {
-          this.Modal_Updat_Detail(row);
-        }
-        return;
-      }
-
-      // 2) No existing row → create a new one
+      // Always create a new cart item (even if same product already exists in cart)
       if (this.details.length > 0) {
         this.order_detail_id();
       } else if (this.details.length === 0) {
