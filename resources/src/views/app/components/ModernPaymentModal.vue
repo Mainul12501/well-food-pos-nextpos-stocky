@@ -125,7 +125,7 @@
                         <div class="input-field">
                           <label class="field-label">{{$t('Amount')}}</label>
                           <div class="input-with-icon">
-                            <input 
+                            <input
                               v-model.number="p.amount"
                               @input="onAmountInput(idx)"
                               type="text"
@@ -135,7 +135,8 @@
                               pattern="\\d*(\\.\\d*)?"
                               :disabled="Number(paymentForm.amountDue) === 0"
                               placeholder="0.00"
-                              class="form-input" 
+                              class="form-input"
+                              readonly
                             />
                           </div>
                         </div>
