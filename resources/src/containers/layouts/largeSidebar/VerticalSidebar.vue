@@ -1010,7 +1010,7 @@
                   <span>{{ $t('Payment_Gateway') }}</span>
                 </router-link>
               </li>
-              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('warehouse')">
+              <li class="submenu-item" v-if="currentUserPermissions && currentUserPermissions.includes('warehouse') && currentUser && currentUser.email === 'admin@domain.com'">
                 <router-link to="/app/settings/Warehouses" class="submenu-link">
                   <i class="submenu-icon i-Clothing-Store"></i>
                   <span>{{ $t('Warehouses') }}</span>

@@ -1512,7 +1512,7 @@
 
           <li
             class="nav-item"
-            v-if="currentUserPermissions && currentUserPermissions.includes('warehouse')"
+            v-if="currentUserPermissions && currentUserPermissions.includes('warehouse') && currentUser && currentUser.email === 'admin@domain.com'"
           >
             <router-link tag="a" class to="/app/settings/Warehouses">
               <i class="nav-icon i-Clothing-Store"></i>
@@ -2080,7 +2080,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters(["getSideBarToggleProperties", "currentUserPermissions"])
+    ...mapGetters(["getSideBarToggleProperties", "currentUserPermissions", "currentUser"])
   },
 
   methods: {
