@@ -843,6 +843,12 @@ class PermissionsSeeder extends Seeder
                     'name' => 'report_warranty',
                 ],
 
+                // Wastage Tracker
+                [
+                    'id' => 195,
+                    'name' => 'Wastage_Tracker_view',
+                ],
+
             ]
         );
     }

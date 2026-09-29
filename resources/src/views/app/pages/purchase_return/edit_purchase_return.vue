@@ -41,6 +41,27 @@
                   </b-form-group>
                 </b-col>
 
+                <!-- Return Type -->
+                <b-col lg="4" md="4" sm="12" class="mb-3">
+                  <validation-provider name="Return Type" :rules="{ required: true}">
+                    <b-form-group slot-scope="{ valid, errors }" :label="$t('ReturnType') + ' ' + '*'">
+                      <v-select
+                        :class="{'is-invalid': !!errors.length}"
+                        :state="errors[0] ? false : (valid ? true : null)"
+                        v-model="purchase_return.return_type"
+                        :reduce="label => label.value"
+                        :placeholder="$t('ReturnType')"
+                        :options="
+                            [
+                              {label: $t('ForDamagedReturn'), value: 'damaged'},
+                              {label: $t('ForWastageReturn'), value: 'wastage'},
+                            ]"
+                      ></v-select>
+                      <b-form-invalid-feedback>{{ errors[0] }}</b-form-invalid-feedback>
+                    </b-form-group>
+                  </validation-provider>
+                </b-col>
+
                 <!-- Status  -->
                 <b-col lg="4" md="4" sm="12" class="mb-3">
                   <validation-provider name="Status" :rules="{ required: true}">
@@ -294,6 +315,7 @@ export default {
         date: "",
         notes: "",
         statut: "",
+        return_type: "damaged",
         supplier_id: "",
         warehouse_id: "",
         purchase_id: "",
@@ -533,6 +555,7 @@ export default {
             supplier_id: this.purchase_return.supplier_id,
             warehouse_id: this.purchase_return.warehouse_id,
             purchase_id: this.purchase_return.purchase_id,
+            return_type: this.purchase_return.return_type,
             statut: this.purchase_return.statut,
             notes: this.purchase_return.notes,
             tax_rate: this.purchase_return.tax_rate?this.purchase_return.tax_rate:0,

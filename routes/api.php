@@ -651,6 +651,11 @@ Route::middleware(['auth:api', 'Is_Active', 'request.safety', 'token.timeout'])-
     Route::get('returns/purchase/create_purchase_return/{id}', 'PurchasesReturnController@create_purchase_return');
     Route::get('returns/purchase/edit_purchase_return/{id}/{purchase_id}', 'PurchasesReturnController@edit_purchase_return');
 
+    // ------------------------------- Wastage Tracker --------------------------\\
+    // --------------------------------------------------------------------------\\
+
+    Route::get('wastage-tracker', 'WastageTrackerController@index');
+
     // ------------------------------- Payment Sale Returns --------------------------\\
     // --------------------------------------------------------------------------------\\
 

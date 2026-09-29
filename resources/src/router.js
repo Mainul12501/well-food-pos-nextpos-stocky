@@ -997,6 +997,27 @@ const baseRoutes = [
                 ]
             },
 
+            // Wastage Tracker
+            {
+                path: "/app/wastage_tracker",
+                component: () =>
+                    import(
+                        /* webpackChunkName: "wastage_tracker" */ "./views/app/pages/wastage_tracker"
+                    ),
+                redirect: "/app/wastage_tracker/list",
+                children: [
+                    {
+                        name: "index_wastage_tracker",
+                        path: "list",
+                        component: () =>
+                            import(
+                                /* webpackChunkName: "index_wastage_tracker" */
+                                "./views/app/pages/wastage_tracker/index_wastage_tracker"
+                            )
+                    }
+                ]
+            },
+
             // Hrm
             {
                 path: "/app/hrm",

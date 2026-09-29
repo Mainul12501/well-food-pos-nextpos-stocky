@@ -69,9 +69,21 @@
               </div>
               <div>{{$t('warehouse')}} : {{purchase_return.warehouse}}</div>
               <div>
+                {{$t('ReturnType')}} :
+                <span
+                  v-if="purchase_return.return_type == 'wastage'"
+                  class="badge badge-outline-danger"
+                >{{$t('ForWastageReturn')}}</span>
+                <span v-else class="badge badge-outline-info">{{$t('ForDamagedReturn')}}</span>
+              </div>
+              <div>
                 {{$t('PaymentStatus')}} :
                 <span
-                  v-if="purchase_return.payment_status == 'paid'"
+                  v-if="purchase_return.payment_status == 'not_applicable'"
+                  class="badge badge-outline-secondary"
+                >{{$t('NotApplicable')}}</span>
+                <span
+                  v-else-if="purchase_return.payment_status == 'paid'"
                   class="badge badge-outline-success"
                 >{{$t('Paid')}}</span>
                 <span

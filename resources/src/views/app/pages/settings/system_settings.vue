@@ -718,9 +718,26 @@
                     <b-row>
                       <b-col lg="12" class="mb-3">
                         <div class="alert alert-info">
-                          <strong>Note:</strong> If a prefix is empty, the system will use the default prefix (SL for sales, PR for purchases, QT for quotations, AD for adjustments, TR for transfers, RT for returns). 
+                          <strong>Note:</strong> If a prefix is empty, the system will use the default prefix (SL for sales, PR for purchases, QT for quotations, AD for adjustments, TR for transfers, RT for returns).
                           Prefixes only apply to newly created records.
                         </div>
+                      </b-col>
+                    </b-row>
+
+                    <!-- Wastage Waiver Rate -->
+                    <b-row>
+                      <b-col lg="6" md="6" sm="12" class="mb-3">
+                        <b-form-group :label="$t('WastageWaiverRate') + ' (%)'">
+                          <b-form-input
+                            v-model.number="setting.wastage_waiver_rate"
+                            placeholder="5"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                          ></b-form-input>
+                          <small class="text-muted">{{ $t('WastageWaiverRateHint') }}</small>
+                        </b-form-group>
                       </b-col>
                     </b-row>
                     
@@ -2723,6 +2740,7 @@ export default {
         transfer_prefix: '',
         sale_return_prefix: '',
         purchase_return_prefix: '',
+        wastage_waiver_rate: 5,
         // ZATCA (Fatoorah)
         company_name_ar:'',
         vat_number:'',
@@ -3474,6 +3492,7 @@ export default {
       self.data.append("transfer_prefix", self.setting.transfer_prefix || '');
       self.data.append("sale_return_prefix", self.setting.sale_return_prefix || '');
       self.data.append("purchase_return_prefix", self.setting.purchase_return_prefix || '');
+      self.data.append("wastage_waiver_rate", self.setting.wastage_waiver_rate || 5);
       // Security: inactivity auto-logout (minutes) - empty => disabled/null
       self.data.append(
         "session_timeout_minutes",

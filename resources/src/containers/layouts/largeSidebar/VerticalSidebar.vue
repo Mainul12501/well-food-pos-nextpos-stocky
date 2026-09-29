@@ -472,6 +472,18 @@
             </router-link>
           </li>
 
+          <!-- Wastage Tracker -->
+          <li
+            v-if="currentUserPermissions && currentUserPermissions.includes('Wastage_Tracker_view')"
+            :class="{ active: isActiveRoute('wastage_tracker') }"
+            class="nav-item"
+          >
+            <router-link to="/app/wastage_tracker/list" class="nav-link">
+              <i class="nav-icon i-Receipt"></i>
+              <span class="nav-text" v-if="!isCollapsed">{{ $t("WastageTracker") }}</span>
+            </router-link>
+          </li>
+
           <!-- Transfers -->
           <li
             v-show="currentUserPermissions && (

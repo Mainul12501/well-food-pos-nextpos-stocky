@@ -87,7 +87,7 @@
                 </b-dropdown-item>
 
                 <b-dropdown-item
-                  v-if="currentUserPermissions.includes('payment_returns_view')"
+                  v-if="currentUserPermissions.includes('payment_returns_view') && props.row.return_type !== 'wastage'"
                   @click="Show_Payments(props.row.id , props.row)"
                 >
                   <i class="nav-icon i-Money-Bag font-weight-bold mr-2"></i>
@@ -95,7 +95,7 @@
                 </b-dropdown-item>
 
                 <b-dropdown-item
-                  v-if="currentUserPermissions.includes('payment_returns_add')"
+                  v-if="currentUserPermissions.includes('payment_returns_add') && props.row.return_type !== 'wastage'"
                   @click="New_Payment(props.row)"
                 >
                   <i class="nav-icon i-Add font-weight-bold mr-2"></i>
@@ -126,9 +126,21 @@
             <span v-else class="badge badge-outline-info">{{$t('Pending')}}</span>
           </div>
 
+          <div v-else-if="props.column.field == 'return_type'">
+            <span
+              v-if="props.row.return_type == 'wastage'"
+              class="badge badge-outline-danger"
+            >{{$t('ForWastageReturn')}}</span>
+            <span v-else class="badge badge-outline-info">{{$t('ForDamagedReturn')}}</span>
+          </div>
+
           <div v-else-if="props.column.field == 'payment_status'">
             <span
-              v-if="props.row.payment_status == 'paid'"
+              v-if="props.row.payment_status == 'not_applicable'"
+              class="badge badge-outline-secondary"
+            >{{$t('NotApplicable')}}</span>
+            <span
+              v-else-if="props.row.payment_status == 'paid'"
               class="badge badge-outline-success"
             >{{$t('Paid')}}</span>
             <span
@@ -586,6 +598,12 @@ export default {
         {
           label: this.$t("Purchase_Ref"),
           field: "purchase_ref",
+          tdClass: "text-left",
+          thClass: "text-left"
+        },
+        {
+          label: this.$t("ReturnType"),
+          field: "return_type",
           tdClass: "text-left",
           thClass: "text-left"
         },

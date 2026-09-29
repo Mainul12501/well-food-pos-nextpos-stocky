@@ -1502,6 +1502,46 @@
                   </b-card>
                 </b-col>
 
+                <!-- Wastage Tracker -->
+                <b-col md="4">
+                  <b-card no-body class="ul-card__border-radius">
+                    <b-card-header header-tag="header" class="p-1" role="tab">
+                      <b-button
+                        class="card-title mb-0"
+                        block
+                        href="#"
+                        v-b-toggle.panel-Wastage-Tracker
+                        variant="transparent"
+                      >{{$t('WastageTracker')}}</b-button>
+                    </b-card-header>
+                    <b-collapse
+                      id="panel-Wastage-Tracker"
+                      :visible="true"
+                      accordion="my-accordion-wastage"
+                      role="tabpanel"
+                    >
+                      <b-card-body>
+                        <b-card-text>
+                          <b-row>
+                            <!--Wastage Tracker View -->
+                            <b-col md="6">
+                              <label class="checkbox checkbox-outline-primary">
+                                <input
+                                  type="checkbox"
+                                  v-model="permissions"
+                                  value="Wastage_Tracker_view"
+                                >
+                                <span>{{$t('View')}}</span>
+                                <span class="checkmark"></span>
+                              </label>
+                            </b-col>
+                          </b-row>
+                        </b-card-text>
+                      </b-card-body>
+                    </b-collapse>
+                  </b-card>
+                </b-col>
+
                 <!-- Payment Sales -->
                 <b-col md="4">
                   <b-card no-body class="ul-card__border-radius">
