@@ -128,6 +128,7 @@
                             <input
                               v-model.number="p.amount"
                               @input="onAmountInput(idx)"
+                              @blur="validateMinAmount(idx)"
                               type="text"
                               step="0.01"
                               min="0"
@@ -136,9 +137,10 @@
                               :disabled="Number(paymentForm.amountDue) === 0"
                               placeholder="0.00"
                               class="form-input"
-                              readonly
+                              :class="{ 'input-error': p.amountError }"
                             />
                           </div>
+                          <small v-if="p.amountError" class="amount-error-msg">{{ p.amountError }}</small>
                         </div>
                         <div class="input-field">
                           <label class="field-label">{{$t('Account')}}</label>
@@ -527,7 +529,7 @@ export default {
       }
       const defaultMethodId = this.getDefaultPaymentMethodId();
       const defaultAccountId = this.getDefaultAccountId();
-      this.paymentLines.push({ amount: 0, paymentMethodId: defaultMethodId, accountId: defaultAccountId || this.paymentForm.accountId || '' });
+      this.paymentLines.push({ amount: 0, paymentMethodId: defaultMethodId, accountId: defaultAccountId || this.paymentForm.accountId || '', amountError: '' });
     },
     removePaymentLine(index) {
       // Never allow removing the last remaining line – there must always be at least one payment method
@@ -558,6 +560,22 @@ export default {
       // Avoid editing when zero due
       if (Number(this.paymentForm.amountDue) === 0) val = 0;
       this.$set ? this.$set(this.paymentLines[idx], 'amount', Number(val.toFixed ? val.toFixed(2) : val)) : (this.paymentLines[idx].amount = val);
+      // Clear error while typing
+      if (line.amountError) {
+        this.$set ? this.$set(this.paymentLines[idx], 'amountError', '') : (this.paymentLines[idx].amountError = '');
+      }
+    },
+    validateMinAmount(idx) {
+      const line = this.paymentLines && this.paymentLines[idx];
+      if (!line) return;
+      const due = Number(this.paymentForm.amountDue) || 0;
+      const totalPaid = (this.paymentLines || []).reduce((sum, l) => sum + (Number(l.amount) || 0), 0);
+      if (due > 0 && totalPaid < due) {
+        const msg = (this.$t ? this.$t('Amount_cannot_be_less_than_total') : 'Amount cannot be less than total amount') + ' (' + this.formatCurrency(due) + ')';
+        this.$set ? this.$set(this.paymentLines[idx], 'amountError', msg) : (this.paymentLines[idx].amountError = msg);
+      } else {
+        this.$set ? this.$set(this.paymentLines[idx], 'amountError', '') : (this.paymentLines[idx].amountError = '');
+      }
     },
     async loadStripePayment(lineIndex) {
       try {
@@ -854,9 +872,21 @@ export default {
       }
       // Account selection is optional per line; proceed even if unset
 
-      // Validate multi-payment overpay like old POS
       const total = parseFloat(this.totalPaid);
       const due = parseFloat((this.paymentForm.amountDue || this.grandTotal || 0).toFixed(2));
+
+      // Validate minimum amount: total paid must be at least the amount due
+      if (due > 0 && total < due) {
+        if (typeof NProgress !== 'undefined') NProgress.done();
+        this.makeToast('warning', this.$t ? this.$t('Amount_cannot_be_less_than_total') : 'Amount cannot be less than total amount', this.$t ? this.$t('Warning') : 'Warning');
+        // Mark the error on payment lines
+        this.paymentLines.forEach((line, idx) => {
+          this.$set ? this.$set(this.paymentLines[idx], 'amountError', this.$t ? this.$t('Amount_cannot_be_less_than_total') : 'Amount cannot be less than total amount') : (line.amountError = 'Amount cannot be less than total amount');
+        });
+        return;
+      }
+
+      // Validate multi-payment overpay like old POS
       const multi = this.paymentLines.length > 1;
       if (multi && total > due) {
         this.makeToast(
@@ -1111,7 +1141,7 @@ export default {
       const defaultMethodId = this.getDefaultPaymentMethodId();
       const defaultAccountId = this.getDefaultAccountId();
       this.paymentForm.accountId = defaultAccountId;
-      this.paymentLines.push({ amount: Number(this.paymentForm.amountDue || 0), paymentMethodId: defaultMethodId, accountId: defaultAccountId });
+      this.paymentLines.push({ amount: Number(this.paymentForm.amountDue || 0), paymentMethodId: defaultMethodId, accountId: defaultAccountId, amountError: '' });
       this.paymentNote = '';
       this.saleNote = '';
       this.sendEmail = false;
@@ -1726,7 +1756,20 @@ export default {
       color: #9ca3af;
       font-weight: 400;
     }
+
+    &.input-error {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+    }
   }
+
+}
+
+.amount-error-msg {
+  color: #ef4444;
+  font-size: 11px;
+  margin-top: 4px;
+  display: block;
 }
 
 /* Change Notification */
