@@ -630,10 +630,10 @@ export default {
               );
               this.$router.push({ name: "index_purchases" });
             })
-            .catch(() => {
+            .catch(error => {
               this.$swal(
                 this.$t("Delete_Failed"),
-                this.$t("Delete_Therewassomethingwronge"),
+                (error && error.message) || this.$t("Delete_Therewassomethingwronge"),
                 "warning"
               );
             });

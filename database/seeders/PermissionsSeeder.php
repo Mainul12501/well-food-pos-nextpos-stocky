@@ -849,6 +849,12 @@ class PermissionsSeeder extends Seeder
                     'name' => 'Wastage_Tracker_view',
                 ],
 
+                // Wastage Waiver
+                [
+                    'id' => 196,
+                    'name' => 'Wastage_Waiver_view',
+                ],
+
             ]
         );
     }

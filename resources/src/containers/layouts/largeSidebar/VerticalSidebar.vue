@@ -484,6 +484,18 @@
             </router-link>
           </li>
 
+          <!-- Wastage Waiver -->
+          <li
+            v-if="currentUserPermissions && currentUserPermissions.includes('Wastage_Waiver_view')"
+            :class="{ active: isActiveRoute('wastage_waiver') }"
+            class="nav-item"
+          >
+            <router-link to="/app/wastage_waiver/list" class="nav-link">
+              <i class="nav-icon i-Money-2"></i>
+              <span class="nav-text" v-if="!isCollapsed">{{ $t("WastageWaiver") }}</span>
+            </router-link>
+          </li>
+
           <!-- Transfers -->
           <li
             v-show="currentUserPermissions && (

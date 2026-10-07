@@ -326,11 +326,18 @@ export default {
       },
       total: 0,
       GrandTotal: 0,
+      purchase_grand_total: 0,
     };
   },
 
   computed: {
     ...mapGetters(["currentUser"])
+  },
+
+  watch: {
+    'purchase_return.return_type'() {
+      this.Calcul_Total();
+    },
   },
 
   methods: {
@@ -453,17 +460,28 @@ export default {
         this.total = parseFloat(this.total + this.details[i].subtotal);
       }
 
-      const total_without_discount = parseFloat(
-        this.total - this.purchase_return.discount
-      );
-      this.purchase_return.TaxNet = parseFloat(
-        (total_without_discount * this.purchase_return.tax_rate) / 100
-      );
-      this.GrandTotal = parseFloat(
-        total_without_discount +
-          this.purchase_return.TaxNet +
-          this.purchase_return.shipping
-      );
+      // For wastage returns, use the full purchase GrandTotal
+      if (this.purchase_return.return_type === 'wastage' && this.purchase_grand_total > 0) {
+        this.GrandTotal = parseFloat(this.purchase_grand_total);
+        const total_without_discount = parseFloat(
+          this.total - this.purchase_return.discount
+        );
+        this.purchase_return.TaxNet = parseFloat(
+          (total_without_discount * this.purchase_return.tax_rate) / 100
+        );
+      } else {
+        const total_without_discount = parseFloat(
+          this.total - this.purchase_return.discount
+        );
+        this.purchase_return.TaxNet = parseFloat(
+          (total_without_discount * this.purchase_return.tax_rate) / 100
+        );
+        this.GrandTotal = parseFloat(
+          total_without_discount +
+            this.purchase_return.TaxNet +
+            this.purchase_return.shipping
+        );
+      }
 
       var grand_total =  this.GrandTotal.toFixed(2);
       this.GrandTotal = parseFloat(grand_total);
@@ -579,7 +597,11 @@ export default {
           })
           .catch(error => {
             NProgress.done();
-            this.makeToast("danger", this.$t("InvalidData"), this.$t("Failed"));
+            const message =
+              error && error.success === false && error.message
+                ? error.message
+                : this.$t("InvalidData");
+            this.makeToast("danger", message, this.$t("Failed"));
             this.SubmitProcessing = false;
           });
       }
@@ -594,6 +616,7 @@ export default {
         .then(response => {
           this.purchase_return = response.data.purchase_return;
           this.details = response.data.details;
+          this.purchase_grand_total = response.data.purchase_grand_total || 0;
           this.Calcul_Total();
           this.isLoading = false;
         })

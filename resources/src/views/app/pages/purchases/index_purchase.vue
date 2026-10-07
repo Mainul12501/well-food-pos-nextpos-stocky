@@ -449,12 +449,15 @@
 
                   ></v-select>
                   <b-form-invalid-feedback>{{ errors[0] }}</b-form-invalid-feedback>
+                  <span v-if="isWaiverPayment" class="badge badge-info mt-1">
+                    {{$t('WaiverAvailable')}} : {{ formatPriceWithSymbol(currentUser.currency, waiver_balance + waiver_refund, 2) }}
+                  </span>
                 </b-form-group>
               </validation-provider>
             </b-col>
 
              <!-- Received  Amount  -->
-            <b-col lg="4" md="12" sm="12">
+            <b-col lg="4" md="12" sm="12" v-if="!isWaiverPayment">
               <validation-provider
                 name="Received Amount"
                 :rules="{ required: true , regex: /^\d*\.?\d*$/}"
@@ -498,7 +501,7 @@
             </b-col>
 
             <!-- change Amount  -->
-            <b-col lg="4" md="12" sm="12">
+            <b-col lg="4" md="12" sm="12" v-if="!isWaiverPayment">
               <label>{{$t('Change')}} :</label>
               <p
                 class="change_amount"
@@ -506,7 +509,7 @@
             </b-col>
 
              <!-- Account -->
-             <b-col lg="6" md="6" sm="12">
+             <b-col lg="6" md="6" sm="12" v-if="!isWaiverPayment">
               <validation-provider name="Account">
                 <b-form-group slot-scope="{ valid, errors }" :label="$t('Account')">
                   <v-select
@@ -678,6 +681,8 @@ export default {
       accounts: [],
       purchase_due:'',
       due:0,
+      waiver_balance: 0,
+      waiver_refund: 0,
       facture: {
         montant: "",
         received_amount: "",
@@ -720,6 +725,13 @@ export default {
 
   computed: {
     ...mapGetters(["currentUserPermissions", "currentUser"]),
+    isWaiverPayment() {
+      return this.Is_Waiver_Method(this.facture.payment_method_id);
+    },
+    // Most that can be paid with waiver: the supplier's balance, capped at the purchase due
+    waiver_available() {
+      return Math.max(0, Math.min(this.waiver_balance + this.waiver_refund, this.due));
+    },
     columns() {
       return [
         {
@@ -797,6 +809,12 @@ export default {
     }
   },
 
+  watch: {
+    "facture.payment_method_id"() {
+      this.Load_Waiver_Balance();
+    }
+  },
+
   methods: {
 
     updateParams(newProps) {
@@ -857,7 +875,17 @@ export default {
       this.$refs.Add_payment.validate().then(success => {
         if (!success) {
           return;
-        } else if (this.facture.montant > this.facture.received_amount) {
+        }
+        if (this.isWaiverPayment) {
+          // A waiver payment has no received amount or change
+          this.facture.received_amount = this.facture.montant;
+          if (this.facture.montant > this.waiver_available) {
+            this.makeToast("warning", this.$t("WaiverExceedsBalance"), this.$t("Warning"));
+            this.facture.montant = 0;
+            return;
+          }
+        }
+        if (this.facture.montant > this.facture.received_amount) {
           this.makeToast(
             "warning",
             this.$t("Paying_amount_is_greater_than_Received_amount"),
@@ -885,6 +913,14 @@ export default {
       //---------- keyup paid Amount
 
     Verified_paidAmount() {
+      if (this.isWaiverPayment && !isNaN(this.facture.montant)) {
+        this.facture.received_amount = this.facture.montant;
+        if (this.facture.montant > this.waiver_available) {
+          this.makeToast("warning", this.$t("WaiverExceedsBalance"), this.$t("Warning"));
+          this.facture.montant = 0;
+          return;
+        }
+      }
       if (isNaN(this.facture.montant)) {
         this.facture.montant = 0;
       } else if (this.facture.montant > this.facture.received_amount) {
@@ -903,6 +939,34 @@ export default {
         );
         this.facture.montant = 0;
       }
+    },
+
+    //---------- Waiver balance of the purchase's supplier, when paying with the waiver method
+
+    Load_Waiver_Balance() {
+      if (!this.isWaiverPayment || !this.purchase || !this.purchase.id) {
+        return;
+      }
+      this.facture.account_id = "";
+      axios
+        .get("wastage-waiver/balance", { params: { purchase_id: this.purchase.id } })
+        .then(response => {
+          this.waiver_balance = parseFloat(response.data.balance) || 0;
+          if (!this.isWaiverPayment) {
+            return;
+          }
+          if (this.facture.montant > this.waiver_available) {
+            this.facture.montant = this.waiver_available;
+          }
+          this.facture.received_amount = this.facture.montant;
+        })
+        .catch(() => {
+          this.waiver_balance = 0;
+        });
+    },
+
+    Is_Waiver_Method(id) {
+      return this.payment_methods.some(method => method.id == id && method.is_waiver);
     },
 
     //---------- keyup Received Amount
@@ -1255,12 +1319,12 @@ export default {
                 );
                 Fire.$emit("Delete_Purchase");
               })
-              .catch(() => {
+              .catch(error => {
                 // Complete the animation of the  progress bar.
                 setTimeout(() => NProgress.done(), 500);
                 this.$swal(
                   this.$t("Delete_Failed"),
-                  this.$t("Delete_Therewassomethingwronge"),
+                  (error && error.message) || this.$t("Delete_Therewassomethingwronge"),
                   "warning"
                 );
               });
@@ -1299,12 +1363,12 @@ export default {
 
               Fire.$emit("Delete_Purchase");
             })
-            .catch(() => {
+            .catch(error => {
               // Complete the animation of theprogress bar.
               setTimeout(() => NProgress.done(), 500);
               this.$swal(
                 this.$t("Delete_Failed"),
-                this.$t("Delete_Therewassomethingwronge"),
+                (error && error.message) || this.$t("Delete_Therewassomethingwronge"),
                 "warning"
               );
             });
@@ -1467,6 +1531,8 @@ export default {
       this.facture.notes   = facture.notes;
       this.due = parseFloat(this.purchase_due) + facture.montant;
       this.EditPaiementMode = true;
+      // The waiver this payment already used is available again while editing it
+      this.waiver_refund = this.Is_Waiver_Method(facture.payment_method_id) ? parseFloat(facture.montant) || 0 : 0;
       setTimeout(() => {
         // Complete the animation of the  progress bar.
         NProgress.done();
@@ -1486,6 +1552,8 @@ export default {
     },
 
     reset_form_payment() {
+      this.waiver_balance = 0;
+      this.waiver_refund = 0;
       this.facture = {
         id: "",
         purchase_id: "",
@@ -1527,6 +1595,9 @@ export default {
           .catch(error => {
             this.paymentProcessing = false;
             NProgress.done();
+            if (error && error.message) {
+              this.makeToast("danger", error.message, this.$t("Failed"));
+            }
           });
     },
 
@@ -1559,6 +1630,9 @@ export default {
           .catch(error => {
             this.paymentProcessing = false;
             NProgress.done();
+            if (error && error.message) {
+              this.makeToast("danger", error.message, this.$t("Failed"));
+            }
           });
     },
 
@@ -1590,12 +1664,12 @@ export default {
               );
               Fire.$emit("Delete_Facture_purchase");
             })
-            .catch(() => {
+            .catch(error => {
               // Complete the animation of the  progress bar.
               setTimeout(() => NProgress.done(), 500);
               this.$swal(
                 this.$t("Delete_Failed"),
-                this.$t("Delete_Therewassomethingwronge"),
+                (error && error.message) || this.$t("Delete_Therewassomethingwronge"),
                 "warning"
               );
             });

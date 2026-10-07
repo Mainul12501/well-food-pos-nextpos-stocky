@@ -1018,6 +1018,27 @@ const baseRoutes = [
                 ]
             },
 
+            // Wastage Waiver
+            {
+                path: "/app/wastage_waiver",
+                component: () =>
+                    import(
+                        /* webpackChunkName: "wastage_waiver" */ "./views/app/pages/wastage_waiver"
+                    ),
+                redirect: "/app/wastage_waiver/list",
+                children: [
+                    {
+                        name: "index_wastage_waiver",
+                        path: "list",
+                        component: () =>
+                            import(
+                                /* webpackChunkName: "index_wastage_waiver" */
+                                "./views/app/pages/wastage_waiver/index_wastage_waiver"
+                            )
+                    }
+                ]
+            },
+
             // Hrm
             {
                 path: "/app/hrm",

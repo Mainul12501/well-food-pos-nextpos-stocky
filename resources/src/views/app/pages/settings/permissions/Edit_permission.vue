@@ -1535,6 +1535,18 @@
                                 <span class="checkmark"></span>
                               </label>
                             </b-col>
+                            <!--Wastage Waiver View -->
+                            <b-col md="6">
+                              <label class="checkbox checkbox-outline-primary">
+                                <input
+                                  type="checkbox"
+                                  v-model="permissions"
+                                  value="Wastage_Waiver_view"
+                                >
+                                <span>{{$t('WaiverAccount')}}</span>
+                                <span class="checkmark"></span>
+                              </label>
+                            </b-col>
                           </b-row>
                         </b-card-text>
                       </b-card-body>

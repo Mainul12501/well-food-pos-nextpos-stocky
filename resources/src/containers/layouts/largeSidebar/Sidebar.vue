@@ -204,6 +204,32 @@
             </router-link>
           </li>
 
+          <li
+            v-if="currentUserPermissions && currentUserPermissions.includes('Wastage_Tracker_view')"
+            @mouseenter="toggleSubMenu"
+            :class="{ active: selectedParentMenu == 'wastage_tracker' }"
+            class="nav-item"
+            data-item="wastage_tracker"
+          >
+          <router-link tag="a" class="nav-item-hold" to="/app/wastage_tracker/list">
+              <i class="nav-icon i-Receipt"></i>
+              <span class="nav-text">{{ $t("WastageTracker") }}</span>
+            </router-link>
+          </li>
+
+          <li
+            v-if="currentUserPermissions && currentUserPermissions.includes('Wastage_Waiver_view')"
+            @mouseenter="toggleSubMenu"
+            :class="{ active: selectedParentMenu == 'wastage_waiver' }"
+            class="nav-item"
+            data-item="wastage_waiver"
+          >
+          <router-link tag="a" class="nav-item-hold" to="/app/wastage_waiver/list">
+              <i class="nav-icon i-Money-2"></i>
+              <span class="nav-text">{{ $t("WastageWaiver") }}</span>
+            </router-link>
+          </li>
+
            <li
             v-show="currentUserPermissions && (currentUserPermissions.includes('transfer_view')
                      || currentUserPermissions.includes('transfer_add'))"

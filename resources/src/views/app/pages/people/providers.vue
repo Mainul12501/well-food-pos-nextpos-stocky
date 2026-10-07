@@ -238,12 +238,15 @@
 
                   ></v-select>
                   <b-form-invalid-feedback>{{ errors[0] }}</b-form-invalid-feedback>
+                  <span v-if="isWaiverPayment" class="badge badge-info mt-1">
+                    {{$t('WaiverAvailable')}} : {{currentUser.currency}} {{formatNumber(waiver_balance, 2)}}
+                  </span>
                 </b-form-group>
               </validation-provider>
             </b-col>
 
                <!-- Account -->
-               <b-col lg="12" md="6" sm="12">
+               <b-col lg="12" md="6" sm="12" v-if="!isWaiverPayment">
               <validation-provider name="Account">
                 <b-form-group slot-scope="{ valid, errors }" :label="$t('Account')">
                   <v-select
@@ -326,7 +329,7 @@
                     v-model="payment_return.payment_method_id"
                     :reduce="label => label.value"
                     :placeholder="$t('PleaseSelect')"
-                    :options="payment_methods.map(payment_methods => ({label: payment_methods.name, value: payment_methods.id}))"
+                    :options="payment_methods.filter(payment_methods => !payment_methods.is_waiver).map(payment_methods => ({label: payment_methods.name, value: payment_methods.id}))"
 
                   ></v-select>
                   <b-form-invalid-feedback>{{ errors[0] }}</b-form-invalid-feedback>
@@ -680,6 +683,7 @@ export default {
       company_info:{},
       providers: [],
       payment_methods: [],
+      waiver_balance: 0,
       accounts: [],
       provider: {
         id: "",
@@ -725,8 +729,23 @@ export default {
     });
   },
 
+  watch: {
+    "payment.payment_method_id"() {
+      this.Load_Waiver_Balance();
+    }
+  },
+
   computed: {
      ...mapGetters(["currentUserPermissions", "currentUser"]),
+    isWaiverPayment() {
+      return this.payment_methods.some(
+        method => method.id == this.payment.payment_method_id && method.is_waiver
+      );
+    },
+    // Most that can be paid with waiver: the supplier's balance, capped at the total due
+    waiver_available() {
+      return Math.max(0, Math.min(this.waiver_balance, parseFloat(this.payment.due) || 0));
+    },
     columns() {
       return [
         {
@@ -1203,10 +1222,10 @@ export default {
 
               Fire.$emit("Delete_Provider");
             })
-            .catch(() => {
+            .catch(error => {
               this.$swal(
                 this.$t("Delete_Failed"),
-                this.$t("Delete.ProviderError"),
+                (error && error.message) || this.$t("Delete.ProviderError"),
                 "warning"
               );
             });
@@ -1244,12 +1263,12 @@ export default {
 
               Fire.$emit("Delete_Provider");
             })
-            .catch(() => {
+            .catch(error => {
               // Complete the animation of theprogress bar.
               setTimeout(() => NProgress.done(), 500);
               this.$swal(
                 this.$t("Delete_Failed"),
-                this.$t("Delete_Therewassomethingwronge"),
+                (error && error.message) || this.$t("Delete_Therewassomethingwronge"),
                 "warning"
               );
             });
@@ -1275,6 +1294,9 @@ export default {
             this.$t("Warning")
           );
           this.payment.amount = 0;
+        } else if (this.isWaiverPayment && this.payment.amount > this.waiver_available) {
+          this.makeToast("warning", this.$t("WaiverExceedsBalance"), this.$t("Warning"));
+          this.payment.amount = 0;
         }
        else {
             this.Submit_Pay_due();
@@ -1295,11 +1317,35 @@ export default {
           this.$t("Warning")
         );
         this.payment.amount = 0;
-      } 
+      } else if (this.isWaiverPayment && this.payment.amount > this.waiver_available) {
+        this.makeToast("warning", this.$t("WaiverExceedsBalance"), this.$t("Warning"));
+        this.payment.amount = 0;
+      }
+    },
+
+    //---------- Waiver balance of the supplier, when paying with the waiver method
+
+    Load_Waiver_Balance() {
+      if (!this.isWaiverPayment || !this.payment.provider_id) {
+        return;
+      }
+      this.payment.account_id = null;
+      axios
+        .get("wastage-waiver/balance", { params: { provider_id: this.payment.provider_id } })
+        .then(response => {
+          this.waiver_balance = parseFloat(response.data.balance) || 0;
+          if (this.isWaiverPayment && this.payment.amount > this.waiver_available) {
+            this.payment.amount = this.waiver_available;
+          }
+        })
+        .catch(() => {
+          this.waiver_balance = 0;
+        });
     },
 
       //-------------------------------- reset_Form_payment-------------------------------\\
     reset_Form_payment() {
+      this.waiver_balance = 0;
       this.payment = {
         provider_id: "",
         provider_name: "",
@@ -1365,7 +1411,7 @@ export default {
           this.paymentProcessing = false;
         })
         .catch(error => {
-          this.makeToast("danger", this.$t("InvalidData"), this.$t("Failed"));
+          this.makeToast("danger", (error && error.message) || this.$t("InvalidData"), this.$t("Failed"));
           this.paymentProcessing = false;
         });
     },

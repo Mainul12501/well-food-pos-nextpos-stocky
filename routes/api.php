@@ -656,6 +656,11 @@ Route::middleware(['auth:api', 'Is_Active', 'request.safety', 'token.timeout'])-
 
     Route::get('wastage-tracker', 'WastageTrackerController@index');
 
+    // ------------------------------- Wastage Waiver --------------------------\\
+    // --------------------------------------------------------------------------\\
+    Route::get('wastage-waiver', 'WastageWaiverController@index');
+    Route::get('wastage-waiver/balance', 'WastageWaiverController@balance');
+
     // ------------------------------- Payment Sale Returns --------------------------\\
     // --------------------------------------------------------------------------------\\
 
