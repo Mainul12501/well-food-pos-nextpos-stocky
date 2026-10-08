@@ -765,6 +765,8 @@
                         label="Price"
                         :placeholder="$t('Enter_Product_Price')"
                         v-model="product.price"
+                        @keyup="setPointsFromPrice"
+                        @blur="setPointsFromPrice"
                       ></b-form-input>
 
                       <b-form-invalid-feedback
@@ -1801,6 +1803,12 @@ export default {
     //------ Validation State
     getValidationState({ dirty, validated, valid = null }) {
       return dirty || validated ? valid : null;
+    },
+
+    //------ Points = 1% of Retail Price
+    setPointsFromPrice() {
+      const price = parseFloat(this.product.price);
+      this.product.points = isNaN(price) ? "" : Math.round(price) / 100;
     },
 
 
