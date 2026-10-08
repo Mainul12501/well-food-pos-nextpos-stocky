@@ -8,7 +8,7 @@
       <b-card class="mb-4">
         <b-row>
           <b-col md="3" class="mb-3">
-            <b-form-group :label="$t('Supplier')">
+            <b-form-group class="mb-0" :label="$t('Supplier')">
               <v-select
                 v-model="selectedSupplier"
                 :reduce="label => label.value"
@@ -19,7 +19,7 @@
           </b-col>
 
           <b-col md="2" class="mb-3">
-            <b-form-group :label="$t('FilterMode')">
+            <b-form-group class="mb-0" :label="$t('FilterMode')">
               <v-select
                 v-model="filterMode"
                 :reduce="label => label.value"
@@ -34,7 +34,7 @@
 
           <template v-if="filterMode === 'monthly'">
             <b-col md="2" class="mb-3">
-              <b-form-group :label="$t('Month')">
+              <b-form-group class="mb-0" :label="$t('Month')">
                 <v-select
                   v-model="selectedMonth"
                   :reduce="label => label.value"
@@ -44,7 +44,7 @@
               </b-form-group>
             </b-col>
             <b-col md="2" class="mb-3">
-              <b-form-group :label="$t('Year')">
+              <b-form-group class="mb-0" :label="$t('Year')">
                 <v-select
                   v-model="selectedYear"
                   :reduce="label => label.value"
@@ -57,12 +57,12 @@
 
           <template v-if="filterMode === 'custom'">
             <b-col md="2" class="mb-3">
-              <b-form-group :label="$t('From')">
+              <b-form-group class="mb-0" :label="$t('From')">
                 <b-form-input type="date" v-model="dateFrom"></b-form-input>
               </b-form-group>
             </b-col>
             <b-col md="2" class="mb-3">
-              <b-form-group :label="$t('To')">
+              <b-form-group class="mb-0" :label="$t('To')">
                 <b-form-input type="date" v-model="dateTo"></b-form-input>
               </b-form-group>
             </b-col>
@@ -113,10 +113,43 @@
       </b-row>
 
       <!-- Waiver by Supplier -->
-      <b-card class="mb-4" :title="$t('WaiverBySupplier')">
+      <b-card class="mb-4" :title="$t('WaiverBySupplier') + ' - ' + waiverMonthLabel">
+        <!-- This section has its own month and year filter -->
+        <b-row>
+          <b-col md="3" class="mb-3">
+            <b-form-group class="mb-0" :label="$t('Month')">
+              <v-select
+                v-model="waiverMonth"
+                :reduce="label => label.value"
+                :clearable="false"
+                :options="months"
+              ></v-select>
+            </b-form-group>
+          </b-col>
+          <b-col md="3" class="mb-3">
+            <b-form-group class="mb-0" :label="$t('Year')">
+              <v-select
+                v-model="waiverYear"
+                :reduce="label => label.value"
+                :clearable="false"
+                :options="years"
+              ></v-select>
+            </b-form-group>
+          </b-col>
+          <b-col md="3" class="mb-3 d-flex align-items-end">
+            <b-button variant="primary" @click="fetchWaiverSuppliers()">
+              <i class="i-Filter-2 mr-1"></i> {{ $t("Filter") }}
+            </b-button>
+          </b-col>
+        </b-row>
+
         <vue-good-table
           :columns="supplierColumns"
-          :rows="suppliers_summary"
+          :rows="waiver_suppliers"
+          :search-options="{
+            placeholder: $t('Search_this_table'),
+            enabled: true,
+          }"
           :pagination-options="{
             enabled: true,
             mode: 'records',
@@ -203,7 +236,12 @@ export default {
       dateTo: "",
       suppliers: [],
       transactions: [],
-      suppliers_summary: [],
+      waiver_suppliers: [],
+      waiverMonth: now.getMonth() + 1,
+      waiverYear: now.getFullYear(),
+      // Month the supplier table is currently showing
+      waiverShownMonth: now.getMonth() + 1,
+      waiverShownYear: now.getFullYear(),
       current_balance: "0.00",
       earned: "0.00",
       used: "0.00",
@@ -215,8 +253,19 @@ export default {
   computed: {
     ...mapGetters(["currentUserPermissions", "currentUser"]),
 
+    waiverMonthLabel() {
+      const month = this.months.find(item => item.value === this.waiverShownMonth);
+      return (month ? month.label : "") + " " + this.waiverShownYear;
+    },
+
     supplierColumns() {
       return [
+        {
+          label: this.$t("Month"),
+          field: "month",
+          tdClass: "text-left",
+          thClass: "text-left"
+        },
         {
           label: this.$t("Supplier"),
           field: "supplier_name",
@@ -350,7 +399,6 @@ export default {
         .get("wastage-waiver", { params })
         .then(response => {
           this.transactions = response.data.transactions;
-          this.suppliers_summary = response.data.suppliers_summary;
           this.suppliers = response.data.suppliers;
           this.current_balance = response.data.current_balance;
           this.earned = response.data.earned;
@@ -363,6 +411,24 @@ export default {
         .catch(error => {
           this.isLoading = false;
           NProgress.done();
+        });
+    },
+
+    // Waiver by supplier, for the month and year chosen in that section
+    fetchWaiverSuppliers() {
+      const month = this.waiverMonth;
+      const year = this.waiverYear;
+
+      axios
+        .get("wastage-waiver", { params: { month, year } })
+        .then(response => {
+          this.waiverShownMonth = month;
+          this.waiverShownYear = year;
+          const label = this.waiverMonthLabel;
+          this.waiver_suppliers = response.data.suppliers_summary.map(row => ({ ...row, month: label }));
+        })
+        .catch(() => {
+          this.waiver_suppliers = [];
         });
     },
 
@@ -391,6 +457,7 @@ export default {
 
   created() {
     this.fetchData();
+    this.fetchWaiverSuppliers();
   },
 };
 </script>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Services\OwnerPermissionSyncService;
 use App\utils\helpers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -142,6 +143,22 @@ class PermissionsController extends BaseController
             ], 422);
         }
 
+    }
+
+    // ----------- Sync missing permissions to the owner role --------------\\
+
+    public function syncOwnerPermissions(Request $request, OwnerPermissionSyncService $service)
+    {
+        abort_unless($service->isOwner($request->user('api')), 403);
+
+        $result = $service->sync();
+
+        \Log::info('Owner permissions synced', [
+            'user_id' => $request->user('api')->id,
+            'added' => $result['added'],
+        ]);
+
+        return response()->json(['success' => true] + $result);
     }
 
     // ----------- Delete Role --------------\\

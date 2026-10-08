@@ -710,6 +710,7 @@ Route::middleware(['auth:api', 'Is_Active', 'request.safety', 'token.timeout'])-
     // ------------------------------- Permission Groups user -----------\\
     // ------------------------------------------------------------------\\
 
+    Route::post('roles/sync_owner_permissions', 'PermissionsController@syncOwnerPermissions');
     Route::resource('roles', 'PermissionsController');
     Route::resource('roles/check/create_page', 'PermissionsController@Check_Create_Page');
     Route::post('roles/delete/by_selection', 'PermissionsController@delete_by_selection');

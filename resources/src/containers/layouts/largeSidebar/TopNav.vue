@@ -16,6 +16,9 @@
     <div style="margin: auto"></div>
 
     <div class="header-part-right nav-right">
+      <!-- Sync missing permissions to Owner role (owner only) -->
+      <SyncOwnerPermissionsButton />
+
       <!-- POS Link -->
       <router-link 
         v-if="currentUserPermissions && currentUserPermissions.includes('Pos_view')"
@@ -157,7 +160,10 @@ import { mapGetters, mapActions } from "vuex";
 import { mixin as clickaway } from "vue-clickaway";
 // import { setTimeout } from 'timers';
 
+import SyncOwnerPermissionsButton from "./../../../components/common/SyncOwnerPermissionsButton";
+
 export default {
+  components: { SyncOwnerPermissionsButton },
   mixins: [clickaway],
  
   data() {

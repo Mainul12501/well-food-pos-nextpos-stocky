@@ -111,108 +111,6 @@
           </template>
         </vue-good-table>
       </b-card>
-
-      <template v-if="canViewWaiver">
-        <!-- Waiver balance by supplier -->
-        <b-card class="mt-4" :title="$t('WaiverBySupplier') + ' - ' + waiverMonthLabel">
-          <!-- This section has its own month and year filter -->
-          <b-row>
-            <b-col md="3" class="mb-3">
-              <b-form-group :label="$t('Month')">
-                <v-select
-                  v-model="waiverMonth"
-                  :reduce="label => label.value"
-                  :clearable="false"
-                  :options="months"
-                ></v-select>
-              </b-form-group>
-            </b-col>
-            <b-col md="3" class="mb-3">
-              <b-form-group :label="$t('Year')">
-                <v-select
-                  v-model="waiverYear"
-                  :reduce="label => label.value"
-                  :clearable="false"
-                  :options="years"
-                ></v-select>
-              </b-form-group>
-            </b-col>
-            <b-col md="3" class="mb-3 d-flex align-items-end">
-              <b-button variant="primary" @click="fetchWaiverSuppliers()">
-                <i class="i-Filter-2 mr-1"></i> {{ $t("Filter") }}
-              </b-button>
-            </b-col>
-          </b-row>
-
-          <vue-good-table
-            :columns="waiverSupplierColumns"
-            :rows="waiver_suppliers"
-            :search-options="{
-              placeholder: $t('Search_this_table'),
-              enabled: true,
-            }"
-            :pagination-options="{
-              enabled: true,
-              mode: 'records',
-              nextLabel: 'next',
-              prevLabel: 'prev',
-            }"
-            styleClass="tableOne table-hover vgt-table"
-          >
-            <template slot="table-row" slot-scope="props">
-              <span v-if="['earned', 'used', 'expired', 'balance'].includes(props.column.field)">
-                {{ currentUser.currency }} {{ props.row[props.column.field] }}
-              </span>
-            </template>
-          </vue-good-table>
-        </b-card>
-
-        <!-- Waiver history with purchase -->
-        <b-card class="mt-4" :title="$t('WaiverLedger')">
-          <vue-good-table
-            :columns="waiverColumns"
-            :rows="waiver_transactions"
-            :search-options="{
-              placeholder: $t('Search_this_table'),
-              enabled: true,
-            }"
-            :pagination-options="{
-              enabled: true,
-              mode: 'records',
-              nextLabel: 'next',
-              prevLabel: 'prev',
-            }"
-            styleClass="tableOne table-hover vgt-table"
-          >
-            <template slot="table-row" slot-scope="props">
-              <div v-if="props.column.field == 'type'">
-                <span class="badge" :class="waiverTypeBadge(props.row.type)">{{ waiverTypeLabel(props.row.type) }}</span>
-              </div>
-              <div v-else-if="props.column.field == 'purchase_ref'">
-                <router-link
-                  v-if="props.row.purchase_id && !props.row.purchase_deleted"
-                  :to="'/app/purchases/detail/'+props.row.purchase_id"
-                >
-                  <span class="ul-btn__text ml-1">{{ props.row.purchase_ref }}</span>
-                </router-link>
-                <span v-else>{{ props.row.purchase_ref }}</span>
-              </div>
-              <span v-else-if="props.column.field == 'rate'">
-                {{ props.row.rate === null ? '---' : props.row.rate + '%' }}
-              </span>
-              <span v-else-if="props.column.field == 'base_amount'">
-                {{ props.row.base_amount === null ? '---' : currentUser.currency + ' ' + props.row.base_amount }}
-              </span>
-              <span
-                v-else-if="props.column.field == 'amount'"
-                :class="parseFloat(props.row.amount) < 0 ? 'text-danger' : 'text-success'"
-              >
-                {{ currentUser.currency }} {{ props.row.amount }}
-              </span>
-            </template>
-          </vue-good-table>
-        </b-card>
-      </template>
     </div>
   </div>
 </template>
@@ -238,51 +136,11 @@ export default {
       dateTo: new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10),
       wastage_returns: [],
       total_wastage: "0.00",
-      waiver_suppliers: [],
-      waiverMonth: now.getMonth() + 1,
-      waiverYear: now.getFullYear(),
-      // Month the supplier table is currently showing
-      waiverShownMonth: now.getMonth() + 1,
-      waiverShownYear: now.getFullYear(),
-      waiver_transactions: [],
     };
   },
 
   computed: {
     ...mapGetters(["currentUserPermissions", "currentUser"]),
-
-    canViewWaiver() {
-      return this.currentUserPermissions && this.currentUserPermissions.includes("Wastage_Waiver_view");
-    },
-
-    waiverMonthLabel() {
-      const month = this.months.find(item => item.value === this.waiverShownMonth);
-      return (month ? month.label : "") + " " + this.waiverShownYear;
-    },
-
-    waiverSupplierColumns() {
-      return [
-        { label: this.$t("Month"), field: "month", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("Supplier"), field: "supplier_name", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("WaiverEarned"), field: "earned", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("WaiverUsed"), field: "used", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("WaiverExpired"), field: "expired", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("WaiverBalance"), field: "balance", tdClass: "text-left", thClass: "text-left" },
-      ];
-    },
-
-    waiverColumns() {
-      return [
-        { label: this.$t("date"), field: "date", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("type"), field: "type", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("Purchase"), field: "purchase_ref", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("Supplier"), field: "supplier_name", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("Rate"), field: "rate", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("BaseAmount"), field: "base_amount", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("Amount"), field: "amount", tdClass: "text-left", thClass: "text-left" },
-        { label: this.$t("User"), field: "user", tdClass: "text-left", thClass: "text-left" },
-      ];
-    },
 
     columns() {
       return [
@@ -382,61 +240,6 @@ export default {
           this.isLoading = false;
           NProgress.done();
         });
-
-      // Waiver history for the same filter
-      if (this.canViewWaiver) {
-        axios
-          .get("wastage-waiver", { params })
-          .then(response => {
-            this.waiver_transactions = response.data.transactions;
-          })
-          .catch(() => {
-            this.waiver_transactions = [];
-          });
-      }
-    },
-
-    // Waiver by supplier, for the month and year chosen in that section
-    fetchWaiverSuppliers() {
-      if (!this.canViewWaiver) {
-        return;
-      }
-      const month = this.waiverMonth;
-      const year = this.waiverYear;
-
-      axios
-        .get("wastage-waiver", { params: { month, year } })
-        .then(response => {
-          this.waiverShownMonth = month;
-          this.waiverShownYear = year;
-          const label = this.waiverMonthLabel;
-          this.waiver_suppliers = response.data.suppliers_summary.map(row => ({ ...row, month: label }));
-        })
-        .catch(() => {
-          this.waiver_suppliers = [];
-        });
-    },
-
-    waiverTypeLabel(type) {
-      const labels = {
-        earn: "WaiverTypeEarn",
-        earn_reversal: "WaiverTypeEarnReversal",
-        redeem: "WaiverTypeRedeem",
-        redeem_reversal: "WaiverTypeRedeemReversal",
-        expire: "WaiverTypeExpire",
-      };
-      return labels[type] ? this.$t(labels[type]) : type;
-    },
-
-    waiverTypeBadge(type) {
-      const badges = {
-        earn: "badge-outline-success",
-        earn_reversal: "badge-outline-warning",
-        redeem: "badge-outline-info",
-        redeem_reversal: "badge-outline-warning",
-        expire: "badge-outline-danger",
-      };
-      return badges[type] || "badge-outline-info";
     },
 
     makeToast(variant, body, title) {
@@ -450,7 +253,6 @@ export default {
 
   created() {
     this.fetchData();
-    this.fetchWaiverSuppliers();
   },
 };
 </script>

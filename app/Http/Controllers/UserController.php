@@ -106,6 +106,7 @@ class UserController extends BaseController
             'price_format' => $settings->price_format ?? null,
             'dark_mode' => (bool) ($settings->dark_mode ?? false),
             'timezone' => $this->getEnvValue('APP_TIMEZONE', 'UTC'),
+            'is_owner' => app(\App\Services\OwnerPermissionSyncService::class)->isOwner($user),
         ];
 
         $permissions = $user->roles()->first()?->permissions->pluck('name') ?? [];

@@ -10,6 +10,9 @@
     </div>
 
     <div class="nav-right">
+      <!-- Sync missing permissions to Owner role (owner only) -->
+      <SyncOwnerPermissionsButton />
+
       <!-- POS Link -->
       <router-link 
         v-if="currentUserPermissions && currentUserPermissions.includes('Pos_view')"
@@ -146,7 +149,10 @@
 import Util from "./../../../utils";
 import { mapGetters, mapActions } from "vuex";
 
+import SyncOwnerPermissionsButton from "./../../../components/common/SyncOwnerPermissionsButton";
+
 export default {
+  components: { SyncOwnerPermissionsButton },
   name: "VerticalTopNav",
 
   data() {
