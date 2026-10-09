@@ -1,7 +1,8 @@
 {
     "private": true,
     "overrides": {
-        "node-sass": "npm:sass@^1.49.7"
+        "node-sass": "npm:sass@^1.49.7",
+        "webpack": "5.102.1"
     },
     "scripts": {
         "dev": "npm run development",
